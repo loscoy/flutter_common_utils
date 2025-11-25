@@ -1,0 +1,47 @@
+name: common_utils
+description: A common utilities plugin for Flutter projects.
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Dependency Injection
+  get_it: ^7.6.0
+  
+  # Logging
+  logger: ^2.0.2+1
+  
+  # Utilities
+  path_provider: ^2.1.2
+  device_info_plus: ^12.1.0
+  android_id: ^0.4.0
+  flutter_secure_storage: ^9.0.0
+  package_info_plus: ^9.0.0
+  
+  # Storage
+  shared_preferences: ^2.2.2
+  
+  # Network
+  dio: ^5.4.0
+  dio_smart_retry: ^6.0.0
+  
+  # Meta
+  meta: ^1.9.1
+
+  freezed_annotation: ^3.1.0
+  flutter_easyloading: ^3.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+  build_runner: ^2.7.1
+  json_serializable: ^6.7.1
+  freezed: ^3.2.3

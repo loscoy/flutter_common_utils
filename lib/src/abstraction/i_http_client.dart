@@ -1,0 +1,145 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
+
+/// 网络请求状态枚举
+enum RequestStatus {
+  loading,
+  success,
+  error,
+  timeout,
+  noNetwork,
+}
+
+/// 统一的网络响应类
+class ApiResponse<T> {
+  final RequestStatus status;
+  final T? data;
+  final String? message;
+  final int? statusCode;
+  final dynamic error;
+  final String? authorization;
+
+  const ApiResponse({
+    required this.status,
+    this.data,
+    this.message,
+    this.statusCode,
+    this.error,
+    this.authorization,
+  });
+
+  factory ApiResponse.loading() {
+    return const ApiResponse(status: RequestStatus.loading);
+  }
+
+  factory ApiResponse.success({
+    T? data,
+    String? message,
+    int? statusCode,
+    String? authorization,
+  }) {
+    return ApiResponse(
+      status: RequestStatus.success,
+      data: data,
+      message: message,
+      statusCode: statusCode,
+      authorization: authorization,
+    );
+  }
+
+  factory ApiResponse.error({String? message, int? statusCode, dynamic error}) {
+    return ApiResponse(
+      status: RequestStatus.error,
+      message: message,
+      statusCode: statusCode,
+      error: error,
+    );
+  }
+
+  factory ApiResponse.timeout({String? message}) {
+    return ApiResponse(
+      status: RequestStatus.timeout,
+      message: message ?? '请求超时',
+    );
+  }
+
+  factory ApiResponse.noNetwork({String? message}) {
+    return ApiResponse(
+      status: RequestStatus.noNetwork,
+      message: message ?? '网络连接失败',
+    );
+  }
+
+  bool get isSuccess => status == RequestStatus.success;
+  bool get isError => status == RequestStatus.error;
+  bool get isLoading => status == RequestStatus.loading;
+  bool get isTimeout => status == RequestStatus.timeout;
+  bool get isNoNetwork => status == RequestStatus.noNetwork;
+}
+
+/// HTTP客户端接口
+abstract class IHttpClient {
+  /// GET请求(自定义BaseUrl)
+  Future<ApiResponse<T>> getWithBaseUrl<T>({
+    required String baseUrl,
+    required String path,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+    T Function(dynamic)? converter,
+  });
+
+  /// POST请求(自定义BaseUrl)
+  Future<ApiResponse<T>> postWithBaseUrl<T>({
+    required String baseUrl,
+    required String path,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+    T Function(dynamic)? converter,
+  });
+
+  /// PUT请求(自定义BaseUrl)
+  Future<ApiResponse<T>> putWithBaseUrl<T>({
+    required String baseUrl,
+    required String path,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+    T Function(dynamic)? converter,
+  });
+
+  /// DELETE请求(自定义BaseUrl)
+  Future<ApiResponse<T>> deleteWithBaseUrl<T>({
+    required String baseUrl,
+    required String path,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+    T Function(dynamic)? converter,
+  });
+
+  /// 上传文件
+  Future<ApiResponse<T>> uploadFile<T>({
+    required String baseUrl,
+    required String path,
+    required List<File> files,
+    String fileKey = 'file',
+    Map<String, dynamic>? data,
+    Map<String, String>? headers,
+    ProgressCallback? onSendProgress,
+    CancelToken? cancelToken,
+    T Function(dynamic)? converter,
+  });
+
+  /// 下载文件
+  Future<ApiResponse<String>> downloadFile({
+    required String url,
+    required String savePath,
+    ProgressCallback? onReceiveProgress,
+    CancelToken? cancelToken,
+  });
+}
