@@ -41,8 +41,10 @@ Future<void> setupCommonUtils({String? openAIBaseUrl}) async {
   );
 
   // 注册PackageInfoService (单例)
+  final packageInfoService = PackageInfoServiceImpl(getIt<IAppLogger>());
+  await packageInfoService.init();
   getIt.registerSingleton<IPackageInfoService>(
-    PackageInfoServiceImpl(getIt<IAppLogger>()),
+    packageInfoService,
   );
 
   // 注册SharedPrefs (单例)
