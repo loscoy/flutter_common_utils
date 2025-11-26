@@ -171,36 +171,60 @@ class AppLoggerImpl implements IAppLogger {
   @override
   void v(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     if (!_initialized) return;
+    if (error is StackTrace && stackTrace == null) {
+      stackTrace = error;
+      error = null;
+    }
     _logger.t(message, error: error, stackTrace: stackTrace);
   }
 
   @override
   void d(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     if (!_initialized) return;
+    if (error is StackTrace && stackTrace == null) {
+      stackTrace = error;
+      error = null;
+    }
     _logger.d(message, error: error, stackTrace: stackTrace);
   }
 
   @override
   void i(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     if (!_initialized) return;
+    if (error is StackTrace && stackTrace == null) {
+      stackTrace = error;
+      error = null;
+    }
     _logger.i(message, error: error, stackTrace: stackTrace);
   }
 
   @override
   void w(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     if (!_initialized) return;
+    if (error is StackTrace && stackTrace == null) {
+      stackTrace = error;
+      error = null;
+    }
     _logger.w(message, error: error, stackTrace: stackTrace);
   }
 
   @override
   void e(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     if (!_initialized) return;
+    if (error is StackTrace && stackTrace == null) {
+      stackTrace = error;
+      error = null;
+    }
     _logger.e(message, error: error, stackTrace: stackTrace);
   }
 
   @override
   void wtf(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     if (!_initialized) return;
+    if (error is StackTrace && stackTrace == null) {
+      stackTrace = error;
+      error = null;
+    }
     _logger.f(message, error: error, stackTrace: stackTrace);
   }
 
