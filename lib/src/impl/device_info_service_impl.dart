@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:android_id/android_id.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../abstraction/i_device_info_service.dart';
@@ -35,6 +36,7 @@ class DeviceInfoServiceImpl implements IDeviceInfoService {
 
       if (storedDeviceId != null && storedDeviceId.isNotEmpty) {
         _cachedDeviceId = storedDeviceId;
+        debugPrint("Device ID from storage: $storedDeviceId");
         return storedDeviceId;
       }
 
@@ -45,6 +47,7 @@ class DeviceInfoServiceImpl implements IDeviceInfoService {
         // 存储到 secure storage
         await _secureStorage.write(key: _deviceIdKey, value: nativeDeviceId);
         _cachedDeviceId = nativeDeviceId;
+        debugPrint("Device ID from native: $nativeDeviceId");
         return nativeDeviceId;
       }
 
@@ -52,6 +55,7 @@ class DeviceInfoServiceImpl implements IDeviceInfoService {
       String fallbackId = const Uuid().v4();
       await _secureStorage.write(key: _deviceIdKey, value: fallbackId);
       _cachedDeviceId = fallbackId;
+      debugPrint("Device ID from fallback: $fallbackId");
       return fallbackId;
     } catch (e) {
       // 如果出现错误，生成备用 ID
