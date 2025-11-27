@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:android_id/android_id.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:uuid/uuid.dart';
 import '../abstraction/i_device_info_service.dart';
+import '../models/device_info.dart';
 
 class DeviceInfoServiceImpl implements IDeviceInfoService {
   final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
@@ -47,13 +49,13 @@ class DeviceInfoServiceImpl implements IDeviceInfoService {
       }
 
       // 如果原生 ID 获取失败，生成备用 ID
-      String fallbackId = 'device_${DateTime.now().millisecondsSinceEpoch}';
+      String fallbackId = const Uuid().v4();
       await _secureStorage.write(key: _deviceIdKey, value: fallbackId);
       _cachedDeviceId = fallbackId;
       return fallbackId;
     } catch (e) {
-      // 如果出现错误，生成一个基于时间戳的备用 ID
-      String fallbackId = 'device_${DateTime.now().millisecondsSinceEpoch}';
+      // 如果出现错误，生成备用 ID
+      String fallbackId = const Uuid().v4();
       try {
         await _secureStorage.write(key: _deviceIdKey, value: fallbackId);
       } catch (_) {
@@ -81,39 +83,43 @@ class DeviceInfoServiceImpl implements IDeviceInfoService {
   }
 
   @override
-  Future<Map<String, dynamic>> getDeviceInfo() async {
+  Future<DeviceInfo> getDeviceInfo() async {
     try {
       if (Platform.isAndroid) {
         AndroidDeviceInfo androidInfo = await _deviceInfo.androidInfo;
-        return {
-          'platform': 'android',
-          'model': androidInfo.model,
-          'manufacturer': androidInfo.manufacturer,
-          'version': androidInfo.version.release,
-          'brand': androidInfo.brand,
-          'device': androidInfo.device,
-          'isPhysicalDevice': androidInfo.isPhysicalDevice,
-        };
+        return DeviceInfo(
+          platform: 'android',
+          model: androidInfo.model,
+          manufacturer: androidInfo.manufacturer,
+          version: androidInfo.version.release,
+          brand: androidInfo.brand,
+          device: androidInfo.device,
+          isPhysicalDevice: androidInfo.isPhysicalDevice,
+        );
       } else if (Platform.isIOS) {
         IosDeviceInfo iosInfo = await _deviceInfo.iosInfo;
-        return {
-          'platform': 'ios',
-          'model': iosInfo.model,
-          'name': iosInfo.name,
-          'systemName': iosInfo.systemName,
-          'systemVersion': iosInfo.systemVersion,
-          'isPhysicalDevice': iosInfo.isPhysicalDevice,
-        };
+        return DeviceInfo(
+          platform: 'ios',
+          model: iosInfo.model,
+          name: iosInfo.name,
+          systemName: iosInfo.systemName,
+          version: iosInfo.systemVersion,
+          isPhysicalDevice: iosInfo.isPhysicalDevice,
+        );
       } else {
-        return {
-          'platform': 'unknown',
-        };
+        return DeviceInfo(
+          platform: 'unknown',
+          model: 'unknown',
+          isPhysicalDevice: false,
+        );
       }
     } catch (e) {
-      return {
-        'platform': 'error',
-        'error': e.toString(),
-      };
+      return DeviceInfo(
+        platform: 'error',
+        model: 'error',
+        isPhysicalDevice: false,
+        error: e.toString(),
+      );
     }
   }
 
