@@ -1,45 +1,49 @@
 # Common Utils
 
-一个用于 Flutter 项目的通用工具库插件，集成了常用的基础设施服务。
+[English](README.md) | [中文](README_CN.md)
 
-## 功能特性
+A common utilities plugin for Flutter projects, integrating common infrastructure services.
 
-本插件封装了以下核心服务，并通过 `GetIt` 进行依赖注入管理：
+## Features
 
-*   **日志服务 (AppLogger)**: 统一的日志记录接口。
-*   **设备信息 (DeviceInfoService)**: 获取设备硬件和系统信息。
-*   **包信息 (PackageInfoService)**: 获取应用版本、构建号等信息。
-*   **本地存储 (SharedPrefs)**: 基于 SharedPreferences 的键值对存储封装。
-*   **HTTP 客户端 (HttpClient)**: 基于 Dio 的网络请求客户端，支持拦截器和重试。
-*   **环境检测 (EnvironmentDetectionService)**: 检测运行环境（开发、生产等）及平台信息。
-*   **OpenAI 客户端 (OpenAIClient)**: (可选) 集成 OpenAI 接口调用的客户端。
-*   **应用主题 (AppThemeGenerator)**: 快速生成统一的亮色/暗色主题配置。
-*   **导航扩展 (NavigationExtensions)**: 基于 Context 的便捷路由跳转扩展方法。
-*   **加载服务 (LoadingService)**: 基于 flutter_easyloading 的全局加载提示封装。
+This plugin encapsulates the following core services and manages dependency injection via `GetIt`:
 
-## 安装
+*   **Log Service (AppLogger)**: Unified logging interface.
+*   **Device Info (DeviceInfoService)**: Get detailed device hardware and system information (returns `DeviceInfo` object).
+*   **Package Info (PackageInfoService)**: Get app version, build number, etc.
+*   **Local Storage (SharedPrefs)**: Key-value storage wrapper based on SharedPreferences.
+*   **HTTP Client (HttpClient)**: Dio-based network request client, supporting interceptors and retries.
+*   **API Service Base (BaseApiService)**: Provides unified API call abstraction, encapsulating environment config, authentication, and response handling.
+*   **Environment Detection (EnvironmentDetectionService)**: Detects runtime environment (development, production, etc.).
+*   **Platform Environment Service (PlatformEnvironmentService)**: Platform-specific environment detection (e.g., iOS TestFlight, Android Beta).
+*   **OpenAI Client (OpenAIClient)**: (Optional) Client for integrating OpenAI API calls.
+*   **App Theme (AppThemeGenerator)**: Quickly generate unified light/dark theme configurations.
+*   **Navigation Extensions (NavigationExtensions)**: Context-based convenient route navigation extension methods.
+*   **Loading Service (LoadingService)**: Global loading indicator wrapper based on flutter_easyloading.
 
-在你的 `pubspec.yaml` 中添加依赖：
+## Installation
+
+Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
   common_utils:
-    path: /path/to/common_utils # 根据实际路径配置
+    path: /path/to/common_utils # Configure according to actual path
 ```
 
-## 初始化
+## Initialization
 
-在 Flutter 应用启动前（`main` 函数中）调用 `setupCommonUtils` 进行初始化：
+Call `setupCommonUtils` to initialize before the Flutter app starts (in `main` function):
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:common_utils/common_utils.dart'; // 确保导出了 setupCommonUtils
+import 'package:common_utils/common_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 初始化通用工具库
-  // 可选传入 openAIBaseUrl 以启用 OpenAIClient
+  // Initialize common utils
+  // Optionally pass openAIBaseUrl to enable OpenAIClient
   await setupCommonUtils(
     openAIBaseUrl: "https://api.openai.com/v1", 
   );
@@ -52,12 +56,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 获取 LoadingService 实例
+    // Get LoadingService instance
     final loadingService = getIt<ILoadingService>();
 
     return MaterialApp(
       title: 'Common Utils Demo',
-      // 必须配置 builder 以启用全局加载提示
+      // Must configure builder to enable global loading indicator
       builder: loadingService.init(), 
       home: const HomePage(),
     );
@@ -65,45 +69,85 @@ class MyApp extends StatelessWidget {
 }
 ```
 
-## 使用服务
+## Usage
 
-初始化完成后，可以直接通过 `getIt` 获取服务实例：
-
-```dart
-import 'package:common_utils/common_utils.dart'; // 确保导出了相关接口
-
-void example() async {
-  // 获取日志服务
-  final logger = getIt<IAppLogger>();
-  logger.i("这是一个普通日志");
-  logger.e("这是一个错误日志");
-
-  // 获取本地存储服务
-  final sharedPrefs = getIt<ISharedPrefs>();
-  await sharedPrefs.setString("user_token", "xyz123");
-  final token = sharedPrefs.getString("user_token");
-
-  // 获取设备信息
-  final deviceInfo = getIt<IDeviceInfoService>();
-  final deviceId = await deviceInfo.getDeviceId();
-
-  // 使用加载服务
-  final loadingService = getIt<ILoadingService>();
-  await loadingService.show("加载中...");
-  // 模拟耗时操作
-  await Future.delayed(const Duration(seconds: 2));
-  await loadingService.showSuccess("加载完成");
-}
-```
-
-### 应用主题 (App Theme)
-
-使用 `AppThemeGenerator` 快速生成符合 Material Design 的主题数据：
+After initialization, you can directly get service instances via `getIt`:
 
 ```dart
 import 'package:common_utils/common_utils.dart';
 
-// 定义主题配置
+void example() async {
+  // Get Logger Service
+  final logger = getIt<IAppLogger>();
+  logger.i("This is a normal log");
+  logger.e("This is an error log");
+
+  // Get SharedPrefs Service
+  final sharedPrefs = getIt<ISharedPrefs>();
+  await sharedPrefs.setString("user_token", "xyz123");
+  final token = sharedPrefs.getString("user_token");
+
+  // Get Device Info
+  final deviceInfoService = getIt<IDeviceInfoService>();
+  final deviceId = await deviceInfoService.getDeviceId();
+  final deviceInfo = await deviceInfoService.getDeviceInfo();
+  print("Device Model: ${deviceInfo.model}");
+  print("Platform: ${deviceInfo.platform}");
+
+  // Platform Environment Detection
+  final platformEnv = getIt<IPlatformEnvironmentService>();
+  if (await platformEnv.isTestFlightOrBeta()) {
+    logger.i("Running in TestFlight or Beta");
+  }
+
+  // Use Loading Service
+  final loadingService = getIt<ILoadingService>();
+  await loadingService.show("Loading...");
+  // Simulate time-consuming operation
+  await Future.delayed(const Duration(seconds: 2));
+  await loadingService.showSuccess("Loaded");
+}
+```
+
+### API Service Base (BaseApiService)
+
+Inherit `BaseApiService` to quickly build business API services:
+
+```dart
+class MyApiService extends BaseApiService {
+  MyApiService({
+    required super.httpClient,
+    required super.environmentConfig,
+    required super.logger,
+    super.authHeaderProvider,
+  });
+
+  @override
+  Future<AppApiResponse<T?>> handleResponse<T>(
+    ApiResponse<dynamic> httpResponse,
+    T Function(dynamic)? converter,
+  ) async {
+    // Implement specific response handling logic, e.g., check status code, parse data, etc.
+    // Return AppApiResponse
+  }
+  
+  Future<AppApiResponse<User?>> getUser(String id) {
+    return get(
+      endpoint: ApiEndpoint(path: '/users/$id'), // Assuming IApiEndpoint is implemented
+      converter: (json) => User.fromJson(json),
+    );
+  }
+}
+```
+
+### App Theme (AppThemeGenerator)
+
+Use `AppThemeGenerator` to quickly generate Material Design compliant theme data:
+
+```dart
+import 'package:common_utils/common_utils.dart';
+
+// Define theme configuration
 final themeConfig = AppThemeConfig(
   primaryColor: Colors.blue,
   secondaryColor: Colors.blueAccent,
@@ -117,45 +161,50 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'My App',
-      theme: themeGenerator.lightTheme, // 获取亮色主题
-      darkTheme: themeGenerator.darkTheme, // 获取暗色主题
+      theme: themeGenerator.lightTheme, // Get light theme
+      darkTheme: themeGenerator.darkTheme, // Get dark theme
       home: HomePage(),
     );
   }
 }
 ```
 
-### 导航扩展 (Navigation Extensions)
+### Navigation Extensions (NavigationExtensions)
 
-使用 `context` 直接进行页面跳转，无需手动构建 `MaterialPageRoute`：
+Use `context` to navigate directly without manually building `MaterialPageRoute`:
 
 ```dart
 import 'package:common_utils/common_utils.dart';
 
-// 跳转到新页面 (自动包装为 MaterialPageRoute)
+// Push to new page (automatically wrapped in MaterialPageRoute)
 context.push(NextPage());
 
-// 替换当前页面
+// Replace current page
 context.pushReplacement(LoginPage());
 
-// 跳转并清空路由栈
+// Push and remove until
 context.pushAndRemoveUntil(HomePage(), (route) => false);
 
-// 返回上一页
+// Pop
 context.pop();
 
-// 获取路由参数
+// Get route arguments
 final args = context.getRouteArguments<String>();
 ```
 
-## 依赖项
+## Dependencies
 
-本项目依赖于以下主要开源库：
+This project depends on the following main open-source libraries:
+
 *   `get_it`
 *   `logger`
 *   `dio`
+*   `dio_smart_retry`
 *   `shared_preferences`
 *   `device_info_plus`
 *   `package_info_plus`
 *   `flutter_secure_storage`
 *   `flutter_easyloading`
+*   `android_id`
+*   `uuid`
+*   `freezed_annotation`
