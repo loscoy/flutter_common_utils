@@ -1,5 +1,6 @@
 /// OpenAI模型枚举
 enum OpenAIModel {
+  gemini3ProPreview('google/gemini-3-pro-preview'),
   gpt5('gpt-5'),
   gpt5Nano('gpt-5-nano');
 
