@@ -185,6 +185,7 @@ extension NavigationExtensions on BuildContext {
     } else if (page is Widget) {
       return MaterialPageRoute<T>(
         builder: (context) => page,
+        settings: RouteSettings(name: page.runtimeType.toString()),
         fullscreenDialog: fullscreenDialog,
       );
     } else {

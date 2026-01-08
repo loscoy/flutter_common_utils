@@ -4,7 +4,9 @@ import 'package:dio/dio.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 
 import '../abstraction/i_app_logger.dart';
+import '../abstraction/i_cancel_token.dart';
 import '../abstraction/i_http_client.dart';
+import 'cancel_token_impl.dart';
 
 /// HTTP客户端实现类
 class HttpClientImpl implements IHttpClient {
@@ -113,7 +115,7 @@ class HttpClientImpl implements IHttpClient {
     required String path,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
     T Function(dynamic)? converter,
   }) async {
     try {
@@ -122,7 +124,7 @@ class HttpClientImpl implements IHttpClient {
         path,
         queryParameters: queryParameters,
         options: Options(headers: headers),
-        cancelToken: cancelToken,
+        cancelToken: _extractDioCancelToken(cancelToken),
       );
 
       return _handleResponse<T>(response, converter);
@@ -138,7 +140,7 @@ class HttpClientImpl implements IHttpClient {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
     T Function(dynamic)? converter,
   }) async {
     try {
@@ -148,7 +150,7 @@ class HttpClientImpl implements IHttpClient {
         data: data,
         queryParameters: queryParameters,
         options: Options(headers: headers),
-        cancelToken: cancelToken,
+        cancelToken: _extractDioCancelToken(cancelToken),
       );
 
       return _handleResponse<T>(response, converter);
@@ -164,7 +166,7 @@ class HttpClientImpl implements IHttpClient {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
     T Function(dynamic)? converter,
   }) async {
     try {
@@ -174,7 +176,7 @@ class HttpClientImpl implements IHttpClient {
         data: data,
         queryParameters: queryParameters,
         options: Options(headers: headers),
-        cancelToken: cancelToken,
+        cancelToken: _extractDioCancelToken(cancelToken),
       );
 
       return _handleResponse<T>(response, converter);
@@ -190,7 +192,7 @@ class HttpClientImpl implements IHttpClient {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
     T Function(dynamic)? converter,
   }) async {
     try {
@@ -200,7 +202,7 @@ class HttpClientImpl implements IHttpClient {
         data: data,
         queryParameters: queryParameters,
         options: Options(headers: headers),
-        cancelToken: cancelToken,
+        cancelToken: _extractDioCancelToken(cancelToken),
       );
 
       return _handleResponse<T>(response, converter);
@@ -218,7 +220,7 @@ class HttpClientImpl implements IHttpClient {
     Map<String, dynamic>? data,
     Map<String, String>? headers,
     ProgressCallback? onSendProgress,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
     T Function(dynamic)? converter,
   }) async {
     try {
@@ -251,7 +253,7 @@ class HttpClientImpl implements IHttpClient {
         data: formData,
         options: Options(headers: headers),
         onSendProgress: onSendProgress,
-        cancelToken: cancelToken,
+        cancelToken: _extractDioCancelToken(cancelToken),
       );
 
       return _handleResponse<T>(response, converter);
@@ -265,7 +267,7 @@ class HttpClientImpl implements IHttpClient {
     required String url,
     required String savePath,
     ProgressCallback? onReceiveProgress,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
   }) async {
     try {
       // 从 URL 提取 baseUrl
@@ -280,7 +282,7 @@ class HttpClientImpl implements IHttpClient {
         savePath,
         queryParameters: uri.queryParameters,
         onReceiveProgress: onReceiveProgress,
-        cancelToken: cancelToken,
+        cancelToken: _extractDioCancelToken(cancelToken),
       );
 
       return ApiResponse.success(
@@ -290,6 +292,18 @@ class HttpClientImpl implements IHttpClient {
     } catch (e) {
       return _handleError<String>(e);
     }
+  }
+
+  /// 从 ICancelToken 中提取 dio 的 CancelToken
+  CancelToken? _extractDioCancelToken(ICancelToken? cancelToken) {
+    if (cancelToken == null) {
+      return null;
+    }
+    if (cancelToken is CancelTokenImpl) {
+      return cancelToken.dioCancelToken;
+    }
+    // 如果是其他实现，无法转换，返回 null
+    return null;
   }
 
   ApiResponse<T> _handleResponse<T>(
@@ -390,7 +404,7 @@ class HttpClientImpl implements IHttpClient {
           );
 
         case DioExceptionType.cancel:
-          return ApiResponse.error(message: 'Request cancelled');
+          return ApiResponse.cancelled(message: 'Request cancelled');
 
         default:
           return ApiResponse.error(

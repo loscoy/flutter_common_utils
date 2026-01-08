@@ -1,10 +1,14 @@
 import 'dart:io';
+
 import 'package:dio/dio.dart';
+
+import 'i_cancel_token.dart';
 
 /// 网络请求状态枚举
 enum RequestStatus {
   loading,
   success,
+  cancelled,
   error,
   timeout,
   noNetwork,
@@ -47,6 +51,13 @@ class ApiResponse<T> {
     );
   }
 
+  factory ApiResponse.cancelled({String? message}) {
+    return ApiResponse(
+      status: RequestStatus.cancelled,
+      message: message ?? 'Request was cancelled by user',
+    );
+  }
+
   factory ApiResponse.error({String? message, int? statusCode, dynamic error}) {
     return ApiResponse(
       status: RequestStatus.error,
@@ -59,18 +70,19 @@ class ApiResponse<T> {
   factory ApiResponse.timeout({String? message}) {
     return ApiResponse(
       status: RequestStatus.timeout,
-      message: message ?? '请求超时',
+      message: message ?? 'Request timeout',
     );
   }
 
   factory ApiResponse.noNetwork({String? message}) {
     return ApiResponse(
       status: RequestStatus.noNetwork,
-      message: message ?? '网络连接失败',
+      message: message ?? 'Network connection failed',
     );
   }
 
   bool get isSuccess => status == RequestStatus.success;
+  bool get isCancelled => status == RequestStatus.cancelled;
   bool get isError => status == RequestStatus.error;
   bool get isLoading => status == RequestStatus.loading;
   bool get isTimeout => status == RequestStatus.timeout;
@@ -85,7 +97,7 @@ abstract class IHttpClient {
     required String path,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
     T Function(dynamic)? converter,
   });
 
@@ -96,7 +108,7 @@ abstract class IHttpClient {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
     T Function(dynamic)? converter,
   });
 
@@ -107,7 +119,7 @@ abstract class IHttpClient {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
     T Function(dynamic)? converter,
   });
 
@@ -118,7 +130,7 @@ abstract class IHttpClient {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
     T Function(dynamic)? converter,
   });
 
@@ -131,7 +143,7 @@ abstract class IHttpClient {
     Map<String, dynamic>? data,
     Map<String, String>? headers,
     ProgressCallback? onSendProgress,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
     T Function(dynamic)? converter,
   });
 
@@ -140,6 +152,6 @@ abstract class IHttpClient {
     required String url,
     required String savePath,
     ProgressCallback? onReceiveProgress,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
   });
 }

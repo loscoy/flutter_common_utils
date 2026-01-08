@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import '../models/openai_models.dart';
+import 'i_cancel_token.dart';
 import 'i_http_client.dart';
 
 /// OpenAI客户端接口
@@ -27,7 +27,7 @@ abstract class IOpenAIClient {
     List<OpenAIChatMessage>? messageHistory,
     OpenAIModel model,
     int? maxTokens,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
   });
 
   /// Chat Completion API（标准OpenAI格式）
@@ -50,7 +50,7 @@ abstract class IOpenAIClient {
     double? minP,
     double? topA,
     OpenAIReasoning reasoning,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
   });
 
   /// OCR图片识别
@@ -60,6 +60,6 @@ abstract class IOpenAIClient {
     required String customPrompt,
     OpenAIModel model,
     int? maxTokens,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
   });
 }

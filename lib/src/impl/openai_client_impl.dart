@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import '../abstraction/i_app_logger.dart';
+import '../abstraction/i_cancel_token.dart';
 import '../abstraction/i_device_info_service.dart';
 import '../abstraction/i_http_client.dart';
 import '../abstraction/i_openai_client.dart';
@@ -110,7 +110,7 @@ class OpenAIClientImpl implements IOpenAIClient {
     List<OpenAIChatMessage>? messageHistory,
     OpenAIModel model = OpenAIModel.gpt5,
     int? maxTokens,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
   }) async {
     final messages = <OpenAIChatMessage>[
       if (customPrompt != null)
@@ -165,7 +165,7 @@ class OpenAIClientImpl implements IOpenAIClient {
     OpenAIReasoning reasoning = const OpenAIReasoning(
       effort: OpenAIReasoningEffort.minimal,
     ),
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
   }) async {
     try {
       final requestData = <String, dynamic>{
@@ -236,7 +236,7 @@ class OpenAIClientImpl implements IOpenAIClient {
     String mimeType = 'image/jpeg',
     OpenAIModel model = OpenAIModel.gpt5,
     int? maxTokens,
-    CancelToken? cancelToken,
+    ICancelToken? cancelToken,
   }) async {
     try {
       // 构建多模态消息内容列表
