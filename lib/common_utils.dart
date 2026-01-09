@@ -1,4 +1,9 @@
 // Setup
+// Re-export talker_flutter for TalkerScreen, TalkerWrapper, etc.
+// Re-export talker_dio_logger for custom Dio logging configuration
+export 'package:talker_dio_logger/talker_dio_logger.dart';
+export 'package:talker_flutter/talker_flutter.dart' hide LogLevel;
+
 // Abstractions
 export 'src/abstraction/i_api_endpoint.dart';
 export 'src/abstraction/i_app_logger.dart';

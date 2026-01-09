@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
+import 'package:talker_dio_logger/talker_dio_logger.dart';
 
 import '../abstraction/i_app_logger.dart';
 import '../abstraction/i_cancel_token.dart';
@@ -52,59 +53,22 @@ class HttpClientImpl implements IHttpClient {
 
   /// 添加拦截器
   void _addInterceptors(Dio dio) {
+    // 使用 TalkerDioLogger 记录 HTTP 请求/响应
     dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          final requestData = options.data.toString();
-
-          final buffer = StringBuffer();
-          buffer.writeln('🌐 NETWORK REQUEST');
-          buffer.writeln('Method: ${options.method}');
-          buffer.writeln('URL: ${options.baseUrl}${options.path}');
-
-          if (options.headers.isNotEmpty) {
-            buffer.writeln('Headers: ${options.headers}');
-          }
-
-          if (requestData.isNotEmpty) {
-            buffer.writeln(
-                'Request: ${requestData.length > 200 ? requestData.substring(0, 200) : requestData}');
-          }
-
-          _logger.i(buffer.toString());
-
-          handler.next(options);
-        },
-        onResponse: (response, handler) {
-          final buffer = StringBuffer();
-          buffer.writeln('🌐 NETWORK RESPONSE');
-          buffer.writeln('Method: ${response.requestOptions.method}');
-          buffer.writeln(
-              'URL: ${response.requestOptions.baseUrl}${response.requestOptions.path}');
-          buffer.writeln('Status: ${response.statusCode}');
-
-          if (response.data != null) {
-            buffer.writeln('Response: ${response.data}');
-          }
-
-          _logger.i(buffer.toString());
-
-          handler.next(response);
-        },
-        onError: (error, handler) {
-          final buffer = StringBuffer();
-          buffer.writeln('🌐 NETWORK ERROR');
-          buffer.writeln('Method: ${error.requestOptions.method}');
-          buffer.writeln(
-              'URL: ${error.requestOptions.baseUrl}${error.requestOptions.path}');
-          buffer.writeln('Status: ${error.response?.statusCode}');
-          buffer.writeln(
-              'Error: ${error.message ?? error.response?.data?.toString()}');
-
-          _logger.e(buffer.toString(), error);
-
-          handler.next(error);
-        },
+      TalkerDioLogger(
+        talker: _logger.talkerInstance,
+        settings: const TalkerDioLoggerSettings(
+          // 打印请求头
+          printRequestHeaders: true,
+          // 打印响应头
+          printResponseHeaders: false,
+          // 打印请求数据
+          printRequestData: true,
+          // 打印响应数据
+          printResponseData: true,
+          // 打印响应消息
+          printResponseMessage: true,
+        ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'package:common_utils/common_utils.dart';
+
 /// 日志级别枚举
 enum LogLevel {
   verbose,
@@ -54,6 +56,10 @@ abstract class IAppLogger {
 
   /// 获取日志文件路径
   String? get logFilePath;
+
+  /// 获取 Talker 实例（用于 TalkerScreen 等 UI 组件）
+  /// 返回 dynamic 以避免在抽象层依赖具体实现
+  Talker get talkerInstance;
 
   /// 清理旧日志文件
   Future<void> cleanOldLogs({int keepDays = 7});

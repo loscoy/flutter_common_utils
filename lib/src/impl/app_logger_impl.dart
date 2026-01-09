@@ -1,18 +1,19 @@
 import 'dart:io';
 
-import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:talker_flutter/talker_flutter.dart' hide LogLevel;
+
 import '../abstraction/i_app_logger.dart';
 
-/// 自定义日志输出类
-class FileOutput extends LogOutput {
+/// 自定义文件日志观察者
+/// 将日志同时写入文件以便持久化存储
+class FileLogObserver extends TalkerObserver {
   final File file;
   IOSink? _sink;
   bool _isInitialized = false;
 
-  FileOutput(this.file);
+  FileLogObserver(this.file);
 
-  @override
   Future<void> init() async {
     if (_isInitialized) return;
 
@@ -27,13 +28,12 @@ class FileOutput extends LogOutput {
     }
   }
 
-  @override
-  void output(OutputEvent event) {
+  void _writeToFile(TalkerData data) {
     if (!_isInitialized || _sink == null) {
       // 如果未初始化，尝试同步写入（作为备用方案）
       try {
         file.writeAsStringSync(
-          '${event.lines.join('\n')}\n',
+          '${data.generateTextMessage()}\n',
           mode: FileMode.writeOnlyAppend,
         );
       } catch (e) {
@@ -43,18 +43,31 @@ class FileOutput extends LogOutput {
     }
 
     try {
-      _sink!.writeAll(event.lines, '\n');
-      _sink!.writeln();
+      _sink!.writeln(data.generateTextMessage());
       _sink!.flush();
     } catch (e) {
-      // 如果IOSink出错，重置状态并尝试重新初始化
+      // 如果IOSink出错，重置状态
       _isInitialized = false;
       _sink = null;
     }
   }
 
   @override
-  Future<void> destroy() async {
+  void onLog(TalkerData log) {
+    _writeToFile(log);
+  }
+
+  @override
+  void onError(TalkerError err) {
+    _writeToFile(err);
+  }
+
+  @override
+  void onException(TalkerException exception) {
+    _writeToFile(exception);
+  }
+
+  Future<void> dispose() async {
     if (_sink != null) {
       try {
         await _sink!.flush();
@@ -68,12 +81,12 @@ class FileOutput extends LogOutput {
   }
 }
 
-/// 日志管理器实现
+/// 日志管理器实现 - 基于 Talker
 class AppLoggerImpl implements IAppLogger {
-  late Logger _logger;
+  late Talker _talker;
   bool _initialized = false;
   String? _logFilePath;
-  List<LogOutput>? _outputs; // 保存输出实例以便清理
+  FileLogObserver? _fileObserver;
 
   @override
   Future<void> init({
@@ -87,40 +100,33 @@ class AppLoggerImpl implements IAppLogger {
       return;
     }
 
-    // 配置日志输出
-    final List<LogOutput> outputs = [];
-
-    // 控制台输出
-    if (enableConsoleOutput) {
-      outputs.add(ConsoleOutput());
-    }
+    final List<TalkerObserver> observers = [];
 
     // 文件输出
     if (enableFileOutput) {
       final logFile = await _getLogFile(customLogFileName);
       if (logFile != null) {
-        final fileOutput = FileOutput(logFile);
-        await fileOutput.init(); // 初始化文件输出
-        outputs.add(fileOutput);
+        _fileObserver = FileLogObserver(logFile);
+        await _fileObserver!.init();
+        observers.add(_fileObserver!);
         _logFilePath = logFile.path;
       }
     }
 
-    // 创建Logger实例
-    _logger = Logger(
-      level: _mapLogLevel(level),
-      printer: PrettyPrinter(
-        methodCount: 2, // 调用栈深度
-        errorMethodCount: 8, // 错误时的调用栈深度
-        lineLength: 120, // 每行字符数
-        colors: true, // 彩色输出
-        printEmojis: true, // 表情符号
-        dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart, // 显示时间
+    // 创建 Talker 实例
+    _talker = TalkerFlutter.init(
+      settings: TalkerSettings(
+        enabled: true,
+        useConsoleLogs: enableConsoleOutput,
+        maxHistoryItems: 1000,
       ),
-      output: MultiOutput(outputs),
+      observer: observers.isNotEmpty
+          ? (observers.length == 1
+              ? observers.first
+              : _MultiObserver(observers))
+          : null,
     );
 
-    _outputs = outputs; // 保存输出实例
     _initialized = true;
 
     // 记录初始化日志
@@ -150,24 +156,6 @@ class AppLoggerImpl implements IAppLogger {
     }
   }
 
-  /// 映射日志级别
-  Level _mapLogLevel(LogLevel level) {
-    switch (level) {
-      case LogLevel.verbose:
-        return Level.trace;
-      case LogLevel.debug:
-        return Level.debug;
-      case LogLevel.info:
-        return Level.info;
-      case LogLevel.warning:
-        return Level.warning;
-      case LogLevel.error:
-        return Level.error;
-      case LogLevel.wtf:
-        return Level.fatal;
-    }
-  }
-
   @override
   void v(dynamic message, [dynamic error, StackTrace? stackTrace]) {
     if (!_initialized) return;
@@ -175,7 +163,7 @@ class AppLoggerImpl implements IAppLogger {
       stackTrace = error;
       error = null;
     }
-    _logger.t(message, error: error, stackTrace: stackTrace);
+    _talker.verbose(message?.toString() ?? '', error, stackTrace);
   }
 
   @override
@@ -185,7 +173,7 @@ class AppLoggerImpl implements IAppLogger {
       stackTrace = error;
       error = null;
     }
-    _logger.d(message, error: error, stackTrace: stackTrace);
+    _talker.debug(message?.toString() ?? '', error, stackTrace);
   }
 
   @override
@@ -195,7 +183,7 @@ class AppLoggerImpl implements IAppLogger {
       stackTrace = error;
       error = null;
     }
-    _logger.i(message, error: error, stackTrace: stackTrace);
+    _talker.info(message?.toString() ?? '', error, stackTrace);
   }
 
   @override
@@ -205,7 +193,7 @@ class AppLoggerImpl implements IAppLogger {
       stackTrace = error;
       error = null;
     }
-    _logger.w(message, error: error, stackTrace: stackTrace);
+    _talker.warning(message?.toString() ?? '', error, stackTrace);
   }
 
   @override
@@ -215,7 +203,7 @@ class AppLoggerImpl implements IAppLogger {
       stackTrace = error;
       error = null;
     }
-    _logger.e(message, error: error, stackTrace: stackTrace);
+    _talker.error(message?.toString() ?? '', error, stackTrace);
   }
 
   @override
@@ -225,14 +213,12 @@ class AppLoggerImpl implements IAppLogger {
       stackTrace = error;
       error = null;
     }
-    _logger.f(message, error: error, stackTrace: stackTrace);
+    _talker.critical(message?.toString() ?? '', error, stackTrace);
   }
 
   @override
   void setLevel(LogLevel level) {
-    // Note: logger package 不支持动态设置级别，需要重新创建Logger
     i('📅 Log level change requested to: ${level.name}');
-    i('⚠️ Note: Level changes require logger reinitialization');
   }
 
   /// 用户行为日志
@@ -289,6 +275,9 @@ class AppLoggerImpl implements IAppLogger {
   String? get logFilePath => _logFilePath;
 
   @override
+  Talker get talkerInstance => _talker;
+
+  @override
   Future<void> cleanOldLogs({int keepDays = 7}) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
@@ -337,16 +326,42 @@ class AppLoggerImpl implements IAppLogger {
     if (_initialized) {
       i('📱 AppLogger closing...');
 
-      // 清理输出实例
-      if (_outputs != null) {
-        for (final output in _outputs!) {
-          await output.destroy();
-        }
-        _outputs = null;
+      // 清理文件观察者
+      if (_fileObserver != null) {
+        await _fileObserver!.dispose();
+        _fileObserver = null;
       }
 
       _initialized = false;
       _logFilePath = null;
+    }
+  }
+}
+
+/// 多观察者包装器
+class _MultiObserver extends TalkerObserver {
+  final List<TalkerObserver> _observers;
+
+  _MultiObserver(this._observers);
+
+  @override
+  void onLog(TalkerData log) {
+    for (final observer in _observers) {
+      observer.onLog(log);
+    }
+  }
+
+  @override
+  void onError(TalkerError err) {
+    for (final observer in _observers) {
+      observer.onError(err);
+    }
+  }
+
+  @override
+  void onException(TalkerException exception) {
+    for (final observer in _observers) {
+      observer.onException(exception);
     }
   }
 }
