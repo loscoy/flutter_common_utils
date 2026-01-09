@@ -37,7 +37,7 @@ class OpenAIClientImpl implements IOpenAIClient {
 
   @override
   Future<ApiResponse<OpenAIChatCompletion>> chatResponse({
-    required OpenAIModel model,
+    required String model,
     required List<OpenAIInput> inputs,
     int? maxTokens,
     double? topP,
@@ -54,7 +54,7 @@ class OpenAIClientImpl implements IOpenAIClient {
   }) async {
     try {
       final requestData = <String, dynamic>{
-        'model': model.value,
+        'model': model,
         'input': inputs.map((m) => m.toJson()).toList(),
         if (maxTokens != null) 'max_output_tokens': maxTokens,
         if (topP != null) 'top_p': topP,
@@ -108,7 +108,7 @@ class OpenAIClientImpl implements IOpenAIClient {
     String? message,
     String? customPrompt,
     List<OpenAIChatMessage>? messageHistory,
-    OpenAIModel model = OpenAIModel.gpt5,
+    String model = AIModels.gpt4oMini,
     int? maxTokens,
     ICancelToken? cancelToken,
   }) async {
@@ -145,7 +145,7 @@ class OpenAIClientImpl implements IOpenAIClient {
 
   @override
   Future<ApiResponse<OpenAIChatCompletionResponse>> chatCompletion({
-    required OpenAIModel model,
+    required String model,
     required List<OpenAIChatMessage> messages,
     int? maxTokens,
     double? temperature,
@@ -169,7 +169,7 @@ class OpenAIClientImpl implements IOpenAIClient {
   }) async {
     try {
       final requestData = <String, dynamic>{
-        'model': model.value,
+        'model': model,
         'messages': messages.map((m) => m.toJson()).toList(),
         if (maxTokens != null) 'max_tokens': maxTokens,
         if (temperature != null) 'temperature': temperature,
@@ -234,7 +234,7 @@ class OpenAIClientImpl implements IOpenAIClient {
     required List<String> base64Images,
     required String customPrompt,
     String mimeType = 'image/jpeg',
-    OpenAIModel model = OpenAIModel.gpt5,
+    String model = AIModels.gpt4oMini,
     int? maxTokens,
     ICancelToken? cancelToken,
   }) async {

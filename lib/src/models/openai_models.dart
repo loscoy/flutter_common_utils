@@ -1,11 +1,9 @@
-/// OpenAI模型枚举
-enum OpenAIModel {
-  gemini3ProPreview('google/gemini-3-pro-preview'),
-  gpt5('gpt-5'),
-  gpt5Nano('gpt-5-nano');
-
-  const OpenAIModel(this.value);
-  final String value;
+/// OpenAI模型枚举 - 预定义常用模型
+abstract class AIModels {
+  static const gemini3ProPreview = 'google/gemini-3-pro-preview';
+  static const gpt5 = 'gpt-5';
+  static const gpt5Nano = 'gpt-5-nano';
+  static const gpt4oMini = 'gpt-4o-mini';
 }
 
 /// OpenAI角色枚举

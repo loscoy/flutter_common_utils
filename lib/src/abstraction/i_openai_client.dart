@@ -6,7 +6,7 @@ import 'i_http_client.dart';
 abstract class IOpenAIClient {
   /// Chat Response API（支持输入列表）
   Future<ApiResponse<OpenAIChatCompletion>> chatResponse({
-    required OpenAIModel model,
+    required String model,
     required List<OpenAIInput> inputs,
     int? maxTokens,
     double? topP,
@@ -25,14 +25,14 @@ abstract class IOpenAIClient {
     String? message,
     String? customPrompt,
     List<OpenAIChatMessage>? messageHistory,
-    OpenAIModel model,
+    String model,
     int? maxTokens,
     ICancelToken? cancelToken,
   });
 
   /// Chat Completion API（标准OpenAI格式）
   Future<ApiResponse<OpenAIChatCompletionResponse>> chatCompletion({
-    required OpenAIModel model,
+    required String model,
     required List<OpenAIChatMessage> messages,
     int? maxTokens,
     double? temperature,
@@ -58,7 +58,7 @@ abstract class IOpenAIClient {
     required List<String> base64Images,
     String mimeType,
     required String customPrompt,
-    OpenAIModel model,
+    String model,
     int? maxTokens,
     ICancelToken? cancelToken,
   });
