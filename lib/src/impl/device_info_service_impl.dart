@@ -12,9 +12,7 @@ class DeviceInfoServiceImpl implements IDeviceInfoService {
   final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
   final AndroidId _androidId = const AndroidId();
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-    ),
+    aOptions: AndroidOptions(),
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),

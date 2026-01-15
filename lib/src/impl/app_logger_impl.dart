@@ -1,89 +1,12 @@
-// dart:io 仅在非 Web 平台使用
-import 'dart:io';
-
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:path_provider/path_provider.dart';
+// 条件导入：根据平台选择不同的文件日志实现
+// Web/Wasm 平台使用 stub，原生平台使用 dart:io 实现
 import 'package:talker_flutter/talker_flutter.dart' hide LogLevel;
 
 import '../abstraction/i_app_logger.dart';
-
-/// 自定义文件日志观察者
-/// 将日志同时写入文件以便持久化存储
-class FileLogObserver extends TalkerObserver {
-  final File file;
-  IOSink? _sink;
-  bool _isInitialized = false;
-
-  FileLogObserver(this.file);
-
-  Future<void> init() async {
-    if (_isInitialized) return;
-
-    try {
-      // 确保父目录存在
-      await file.parent.create(recursive: true);
-      _sink = file.openWrite(mode: FileMode.writeOnlyAppend);
-      _isInitialized = true;
-    } catch (e) {
-      // ignore: avoid_print
-      print('Failed to initialize file output: $e');
-    }
-  }
-
-  void _writeToFile(TalkerData data) {
-    if (!_isInitialized || _sink == null) {
-      // 如果未初始化，尝试同步写入（作为备用方案）
-      try {
-        file.writeAsStringSync(
-          '${data.generateTextMessage()}\n',
-          mode: FileMode.writeOnlyAppend,
-        );
-      } catch (e) {
-        // 静默失败，避免日志循环
-      }
-      return;
-    }
-
-    try {
-      _sink!.writeln(data.generateTextMessage());
-      _sink!.flush();
-    } catch (e) {
-      // 如果IOSink出错，重置状态
-      _isInitialized = false;
-      _sink = null;
-    }
-  }
-
-  @override
-  void onLog(TalkerData log) {
-    _writeToFile(log);
-  }
-
-  @override
-  void onError(TalkerError err) {
-    _writeToFile(err);
-  }
-
-  @override
-  void onException(TalkerException exception) {
-    _writeToFile(exception);
-  }
-
-  Future<void> dispose() async {
-    if (_sink != null) {
-      try {
-        await _sink!.flush();
-        await _sink!.close();
-      } catch (e) {
-        // 静默处理关闭错误
-      }
-      _sink = null;
-    }
-    _isInitialized = false;
-  }
-}
+import 'file_log_stub.dart' if (dart.library.io) 'file_log_io.dart';
 
 /// 日志管理器实现 - 基于 Talker
+/// 支持控制台输出和文件输出（仅原生平台）
 class AppLoggerImpl implements IAppLogger {
   late Talker _talker;
   bool _initialized = false;
@@ -104,14 +27,15 @@ class AppLoggerImpl implements IAppLogger {
 
     final List<TalkerObserver> observers = [];
 
-    // 文件输出
+    // 文件输出（通过条件导入处理平台差异）
     if (enableFileOutput) {
-      final logFile = await _getLogFile(customLogFileName);
+      final logFile = await FileLogHelper.getLogFile(customLogFileName);
       if (logFile != null) {
         _fileObserver = FileLogObserver(logFile);
         await _fileObserver!.init();
         observers.add(_fileObserver!);
-        _logFilePath = logFile.path;
+        // 获取文件路径（原生平台返回实际路径，Web 返回 null）
+        _logFilePath = logFile is String ? logFile : logFile.path;
       }
     }
 
@@ -135,32 +59,6 @@ class AppLoggerImpl implements IAppLogger {
     i('📱 AppLogger initialized successfully');
     if (_logFilePath != null) {
       i('📁 Log file path: $_logFilePath');
-    }
-  }
-
-  /// 获取日志文件
-  /// Web 平台不支持文件日志，直接返回 null
-  Future<File?> _getLogFile(String? customFileName) async {
-    // Web 平台不支持 path_provider 的 getApplicationDocumentsDirectory
-    if (kIsWeb) {
-      return null;
-    }
-
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final logsDir = Directory('${directory.path}/logs');
-
-      if (!await logsDir.exists()) {
-        await logsDir.create(recursive: true);
-      }
-
-      final fileName = customFileName ??
-          'app_${DateTime.now().toString().split(' ')[0]}.log';
-      return File('${logsDir.path}/$fileName');
-    } catch (e) {
-      // ignore: avoid_print
-      print('Failed to create log file: $e');
-      return null;
     }
   }
 
@@ -287,49 +185,13 @@ class AppLoggerImpl implements IAppLogger {
 
   @override
   Future<void> cleanOldLogs({int keepDays = 7}) async {
-    // Web 平台不支持文件日志
-    if (kIsWeb) return;
-
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final logsDir = Directory('${directory.path}/logs');
-
-      if (!await logsDir.exists()) return;
-
-      final cutoffDate = DateTime.now().subtract(Duration(days: keepDays));
-      final files = await logsDir.list().toList();
-
-      int deletedCount = 0;
-      for (final file in files) {
-        if (file is File) {
-          final stat = await file.stat();
-          if (stat.modified.isBefore(cutoffDate)) {
-            await file.delete();
-            deletedCount++;
-          }
-        }
-      }
-
-      i('🗑️ Cleaned $deletedCount old log files (kept last $keepDays days)');
-    } catch (error) {
-      e('Failed to clean old logs: $error');
-    }
+    await FileLogHelper.cleanOldLogs(keepDays: keepDays);
+    i('🗑️ Cleaned old log files (kept last $keepDays days)');
   }
 
   @override
   Future<int> getLogFileSize() async {
-    if (_logFilePath == null) return 0;
-
-    try {
-      final file = File(_logFilePath!);
-      if (await file.exists()) {
-        return await file.length();
-      }
-    } catch (error) {
-      e('Failed to get log file size: $error');
-    }
-
-    return 0;
+    return await FileLogHelper.getLogFileSize(_logFilePath);
   }
 
   @override
