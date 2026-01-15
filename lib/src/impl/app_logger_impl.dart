@@ -1,5 +1,7 @@
+// dart:io 仅在非 Web 平台使用
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
 import 'package:talker_flutter/talker_flutter.dart' hide LogLevel;
 
@@ -137,7 +139,13 @@ class AppLoggerImpl implements IAppLogger {
   }
 
   /// 获取日志文件
+  /// Web 平台不支持文件日志，直接返回 null
   Future<File?> _getLogFile(String? customFileName) async {
+    // Web 平台不支持 path_provider 的 getApplicationDocumentsDirectory
+    if (kIsWeb) {
+      return null;
+    }
+
     try {
       final directory = await getApplicationDocumentsDirectory();
       final logsDir = Directory('${directory.path}/logs');
@@ -279,6 +287,9 @@ class AppLoggerImpl implements IAppLogger {
 
   @override
   Future<void> cleanOldLogs({int keepDays = 7}) async {
+    // Web 平台不支持文件日志
+    if (kIsWeb) return;
+
     try {
       final directory = await getApplicationDocumentsDirectory();
       final logsDir = Directory('${directory.path}/logs');

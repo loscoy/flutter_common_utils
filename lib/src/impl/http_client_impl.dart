@@ -1,5 +1,4 @@
-import 'dart:io';
-
+// dart:io 仅在非 Web 平台使用
 import 'package:dio/dio.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 import 'package:talker_dio_logger/talker_dio_logger.dart';
@@ -179,7 +178,7 @@ class HttpClientImpl implements IHttpClient {
   Future<ApiResponse<T>> uploadFile<T>({
     required String baseUrl,
     required String path,
-    required List<File> files,
+    required List<UploadFile> files,
     String fileKey = 'file',
     Map<String, dynamic>? data,
     Map<String, String>? headers,
@@ -192,14 +191,25 @@ class HttpClientImpl implements IHttpClient {
 
       for (int i = 0; i < files.length; i++) {
         final file = files[i];
+
+        // 根据文件类型选择创建方式
+        MultipartFile multipartFile;
+        if (file.useBytes) {
+          // Web 平台或内存文件：使用字节数据
+          multipartFile = MultipartFile.fromBytes(
+            file.bytes!,
+            filename: file.filename,
+          );
+        } else {
+          // 原生平台：使用文件路径
+          multipartFile = await MultipartFile.fromFile(
+            file.path!,
+            filename: file.filename,
+          );
+        }
+
         formData.files.add(
-          MapEntry(
-            fileKey,
-            await MultipartFile.fromFile(
-              file.path,
-              filename: file.path.split('/').last,
-            ),
-          ),
+          MapEntry(fileKey, multipartFile),
         );
       }
 

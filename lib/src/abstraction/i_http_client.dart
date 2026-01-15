@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 
 import 'i_cancel_token.dart';
@@ -89,6 +87,39 @@ class ApiResponse<T> {
   bool get isNoNetwork => status == RequestStatus.noNetwork;
 }
 
+/// 跨平台文件上传抽象类
+/// 提供统一的文件上传接口，支持 Web 和原生平台
+class UploadFile {
+  /// 文件路径（仅在原生平台使用）
+  final String? path;
+
+  /// 文件名
+  final String filename;
+
+  /// 文件字节数据（用于 Web 平台或内存中的文件）
+  final List<int>? bytes;
+
+  /// 文件 MIME 类型
+  final String? mimeType;
+
+  /// 通过文件路径创建（原生平台）
+  const UploadFile.fromPath({
+    required this.path,
+    required this.filename,
+    this.mimeType,
+  }) : bytes = null;
+
+  /// 通过字节数据创建（Web 平台或内存文件）
+  const UploadFile.fromBytes({
+    required this.bytes,
+    required this.filename,
+    this.mimeType,
+  }) : path = null;
+
+  /// 是否使用字节数据
+  bool get useBytes => bytes != null;
+}
+
 /// HTTP客户端接口
 abstract class IHttpClient {
   /// GET请求(自定义BaseUrl)
@@ -135,10 +166,11 @@ abstract class IHttpClient {
   });
 
   /// 上传文件
+  /// 使用 [UploadFile] 类型以支持跨平台
   Future<ApiResponse<T>> uploadFile<T>({
     required String baseUrl,
     required String path,
-    required List<File> files,
+    required List<UploadFile> files,
     String fileKey = 'file',
     Map<String, dynamic>? data,
     Map<String, String>? headers,

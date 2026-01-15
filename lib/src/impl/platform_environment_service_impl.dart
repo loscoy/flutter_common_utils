@@ -1,5 +1,6 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
 import '../abstraction/i_app_logger.dart';
 import '../abstraction/i_environment_service.dart';
 
@@ -12,11 +13,20 @@ class PlatformEnvironmentServiceImpl implements IPlatformEnvironmentService {
   // Method Channel
   static const _channel = MethodChannel('com.foodscanner.environment');
 
+  /// 判断当前是否为 iOS 平台（Web 安全）
+  bool get _isIOS => defaultTargetPlatform == TargetPlatform.iOS;
+
+  /// 判断当前是否为 Android 平台（Web 安全）
+  bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
+
   @override
   Future<bool> isTestFlightOrBeta() async {
-    if (Platform.isIOS) {
+    // Web 平台不支持 TestFlight/Beta 检测
+    if (kIsWeb) return false;
+
+    if (_isIOS) {
       return _isIOSTestFlight();
-    } else if (Platform.isAndroid) {
+    } else if (_isAndroid) {
       return _isAndroidBeta();
     }
     return false;
@@ -62,7 +72,8 @@ class PlatformEnvironmentServiceImpl implements IPlatformEnvironmentService {
 
   @override
   Future<String?> getInstallerPackageName() async {
-    if (!Platform.isAndroid) {
+    // Web 和非 Android 平台不支持
+    if (!_isAndroid) {
       return null;
     }
 

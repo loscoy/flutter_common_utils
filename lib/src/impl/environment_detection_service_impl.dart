@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
+
 import '../abstraction/i_app_logger.dart';
 import '../abstraction/i_environment_service.dart';
 
@@ -11,6 +11,12 @@ class EnvironmentDetectionServiceImpl implements IEnvironmentDetectionService {
   EnvironmentDetectionServiceImpl(this._logger, this._platformService);
 
   AppEnvironment _currentEnvironment = AppEnvironment.dev;
+
+  /// 判断当前是否为 iOS 平台（Web 安全）
+  bool get _isIOS => defaultTargetPlatform == TargetPlatform.iOS;
+
+  /// 判断当前是否为 Android 平台（Web 安全）
+  bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
 
   @override
   AppEnvironment get currentEnvironment => _currentEnvironment;
@@ -50,11 +56,17 @@ class EnvironmentDetectionServiceImpl implements IEnvironmentDetectionService {
       return AppEnvironment.dev;
     }
 
+    // Web 平台：Release 模式下默认使用 prod
+    if (kIsWeb) {
+      _logger.i('Web平台 Release模式，使用production环境');
+      return AppEnvironment.prod;
+    }
+
     // Release模式下根据平台判断
     if (kReleaseMode) {
-      if (Platform.isIOS) {
+      if (_isIOS) {
         return await _detectIOSEnvironment();
-      } else if (Platform.isAndroid) {
+      } else if (_isAndroid) {
         return await _detectAndroidEnvironment();
       }
     }
