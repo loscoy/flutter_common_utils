@@ -1,5 +1,6 @@
 import 'package:common_utils/src/models/app_api_response.dart';
 import 'package:meta/meta.dart';
+
 import '../abstraction/i_api_endpoint.dart';
 import '../abstraction/i_app_logger.dart';
 import '../abstraction/i_auth_header_provider.dart';
@@ -131,6 +132,38 @@ abstract class BaseApiService {
     logger.d('API POST: $path [$envName]');
 
     final httpResponse = await httpClient.postWithBaseUrl<Map<String, dynamic>>(
+      baseUrl: baseUrl,
+      path: path,
+      data: data,
+      queryParameters: queryParameters,
+      converter: (data) => data,
+      headers: await getHeaders(requireAuth: requireAuth),
+    );
+
+    return await handleResponse<T>(httpResponse, converter);
+  }
+
+  /// 通用 PUT 请求
+  ///
+  /// 参数:
+  /// - [endpoint] API 端点对象
+  /// - [data] 请求体数据
+  /// - [queryParameters] 查询参数
+  /// - [pathParameters] 路径参数（用于替换 URL 中的占位符）
+  /// - [converter] 数据转换器
+  /// - [requireAuth] 是否需要认证（默认true）
+  Future<AppApiResponse<T?>> put<T>({
+    required IApiEndpoint endpoint,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? pathParameters,
+    T Function(dynamic)? converter,
+    bool requireAuth = true,
+  }) async {
+    final path = endpoint.buildPath(pathParams: pathParameters);
+    logger.d('API PUT: $path [$envName]');
+
+    final httpResponse = await httpClient.putWithBaseUrl<Map<String, dynamic>>(
       baseUrl: baseUrl,
       path: path,
       data: data,

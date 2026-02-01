@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "common_utils",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "dependencies": [
         "android_id",
         "device_info_plus",
